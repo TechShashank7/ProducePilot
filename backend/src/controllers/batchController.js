@@ -7,10 +7,11 @@ import { getDeterministicCandidates } from '../services/rescueEngine.js';
 
 export const getBatches = async (req, res) => {
   try {
-    const { warehouseId, productId, riskCategory, sortBy, order, page = 1, pageSize = 20 } = req.query;
+    const { warehouseId, productId, riskCategory, batchCode, sortBy, order, page = 1, pageSize = 20 } = req.query;
     const filter = {};
     if (warehouseId && warehouseId !== 'all') filter.warehouseRef = warehouseId;
     if (productId && productId !== 'all') filter.productRef = productId;
+    if (batchCode) filter.batchCode = { $regex: batchCode, $options: 'i' };
 
     // 1. Fetch batches
     let batches = await Batch.find(filter)

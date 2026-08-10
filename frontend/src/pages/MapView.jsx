@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Polyline, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/api';
 import { fetchApi } from '../services/api';
 import { Package, AlertTriangle, Truck, MapPin } from 'lucide-react';
 import { useToast } from '../components/ui/Toast';
@@ -9,97 +9,18 @@ const mapContainerStyle = {
   height: '100%'
 };
 
-// Custom dark mode JSON style for Google Maps to match our design system
-const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-  {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }]
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }]
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#263c3f" }]
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#6b9a76" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#38414e" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#212a37" }]
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#9ca5b3" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#746855" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#1f2835" }]
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#f3d19c" }]
-  },
-  {
-    featureType: "transit",
-    elementType: "geometry",
-    stylers: [{ color: "#2f3948" }]
-  },
-  {
-    featureType: "transit.station",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#d59563" }]
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#17263c" }]
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#515c6d" }]
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#17263c" }]
-  }
-];
+// Default Google Maps style (light) - no custom styles needed for light theme
+const lightMapStyle = [];
 
 const riskColors = {
-  low: '#10b981', // text-risk-low
-  medium: '#f59e0b', // text-risk-medium
-  high: '#ef4444', // text-risk-high
-  critical: '#b91c1c' // text-risk-critical
+  low: '#10b981', // text-success-green
+  medium: '#f59e0b', // text-warning-orange
+  high: '#ef4444', // text-error-red
+  critical: '#b91c1c' 
 };
 
 const mapOptions = {
-  styles: darkMapStyle,
+  styles: lightMapStyle,
   disableDefaultUI: true,
   zoomControl: true,
 };
@@ -133,7 +54,6 @@ const MapView = () => {
       const data = await fetchApi('/map/overview');
       setWarehouses(data);
       
-      // Auto-fit bounds if we have warehouses and map is ready
       if (data.length > 0 && mapRef.current) {
         fitBoundsToWarehouses(data, mapRef.current);
       }
@@ -174,13 +94,11 @@ const MapView = () => {
     if (fullRoutePath.length === 0) return;
     
     let i = 0;
-    // Calculate speed based on route length to ensure it takes roughly 1-1.5 seconds total
     const intervalMs = Math.max(8, Math.floor(1500 / fullRoutePath.length));
     
     setAnimatedPath([fullRoutePath[0]]);
     
     const interval = setInterval(() => {
-      // Dynamically skip points if the route is extremely dense to keep animation speed consistent
       const step = Math.max(1, Math.floor(fullRoutePath.length / 60));
       i += step;
       if (i >= fullRoutePath.length) i = fullRoutePath.length - 1;
@@ -224,8 +142,6 @@ const MapView = () => {
       },
       (result, status) => {
         if (status === window.google.maps.DirectionsStatus.OK) {
-          // Extract a highly detailed path from the individual steps rather than the coarse overview_path
-          // This ensures short routes (<1km) still have enough points to draw and animate properly
           const path = [];
           result.routes[0].legs[0].steps.forEach(step => {
             step.path.forEach(p => path.push({ lat: p.lat(), lng: p.lng() }));
@@ -234,9 +150,8 @@ const MapView = () => {
           setFullRoutePath(path);
           setAnimatedPath([]);
           
-          // Auto-zoom to perfectly frame the route
           if (mapRef.current) {
-            mapRef.current.fitBounds(result.routes[0].bounds, 60); // 60px padding
+            mapRef.current.fitBounds(result.routes[0].bounds, 60); 
           }
         } else {
           toast.error("Could not fetch route. Ensure Directions API is enabled.");
@@ -263,7 +178,6 @@ const MapView = () => {
       setDestinations(data);
       setShowDestinations(true);
       
-      // Fit bounds to include warehouse and destinations
       if (mapRef.current && data.length > 0) {
         const bounds = new window.google.maps.LatLngBounds();
         bounds.extend(new window.google.maps.LatLng(selectedWarehouse.latitude, selectedWarehouse.longitude));
@@ -279,29 +193,28 @@ const MapView = () => {
   };
 
   const getMarkerIcon = (warehouse) => {
-    // Base size 30, max size 50 based on atRiskKg (cap at 10000kg for scaling)
     const size = 30 + Math.min(20, (warehouse.atRiskKg / 10000) * 20);
     return {
       path: window.google.maps.SymbolPath.CIRCLE,
       fillColor: riskColors[warehouse.riskLevel] || riskColors.low,
       fillOpacity: 1,
-      strokeColor: '#1e293b', // bg-bg-elevated
-      strokeWeight: 2,
-      scale: size / 4, // scale is radius
+      strokeColor: '#ffffff', // white outline for better visibility on light map
+      strokeWeight: 3,
+      scale: size / 4, 
     };
   };
 
   const getDestinationIcon = (type) => {
-    let color = '#3b82f6'; // default blue
-    if (type === 'ngo') color = '#a855f7'; // purple
-    if (type === 'wholesale_market') color = '#f97316'; // orange
+    let color = '#3b82f6'; 
+    if (type === 'ngo') color = '#a855f7'; 
+    if (type === 'wholesale_market') color = '#f97316'; 
 
     return {
       path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
       fillColor: color,
       fillOpacity: 1,
-      strokeColor: '#1e293b',
-      strokeWeight: 1,
+      strokeColor: '#ffffff',
+      strokeWeight: 2,
       scale: 4,
     };
   };
@@ -312,11 +225,11 @@ const MapView = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] border border-border rounded-xl bg-bg-card">
-        <AlertTriangle size={48} className="text-risk-critical mb-4" />
-        <h2 className="text-lg font-medium text-text-primary mb-2">Error Loading Map Data</h2>
-        <p className="text-text-muted mb-4">{error}</p>
-        <button onClick={fetchMapOverview} className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] border border-border-light rounded-[24px] bg-surface shadow-sm">
+        <AlertTriangle size={48} className="text-error-red mb-4" />
+        <h2 className="text-lg font-bold text-text-primary mb-2">Error Loading Map Data</h2>
+        <p className="text-text-secondary mb-4">{error}</p>
+        <button onClick={fetchMapOverview} className="px-6 py-2.5 bg-primary hover:bg-primary-container text-white font-bold rounded-full transition-colors">
           Retry
         </button>
       </div>
@@ -324,7 +237,7 @@ const MapView = () => {
   }
 
   return (
-    <div className="relative w-full h-[calc(100vh-6rem)] rounded-xl overflow-hidden border border-border">
+    <div className="relative w-full h-[calc(100vh-2rem)] rounded-[24px] overflow-hidden shadow-sm">
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         zoom={5}
@@ -333,7 +246,6 @@ const MapView = () => {
         onUnmount={onUnmount}
         options={mapOptions}
       >
-        {/* Render Warehouses */}
         {warehouses.map(warehouse => (
           <Marker
             key={warehouse._id}
@@ -342,14 +254,13 @@ const MapView = () => {
             onClick={() => handleWarehouseClick(warehouse)}
             label={{
               text: warehouse.totalInventoryKg > 0 ? (warehouse.totalInventoryKg / 1000).toFixed(1) + 't' : '',
-              color: '#ffffff',
+              color: '#000000',
               fontSize: '10px',
               fontWeight: 'bold'
             }}
           />
         ))}
 
-        {/* Render Destinations & Lines */}
         {showDestinations && selectedWarehouse && destinations.map(dest => (
           <React.Fragment key={dest._id}>
             <Marker
@@ -358,7 +269,6 @@ const MapView = () => {
               title={dest.name}
               onClick={() => handleDestinationClick(dest)}
             />
-            {/* Draw faint straight lines to all other non-selected destinations */}
             {(!selectedRouteDest || selectedRouteDest._id !== dest._id) && (
               <Polyline
                 path={[
@@ -366,9 +276,9 @@ const MapView = () => {
                   { lat: dest.latitude, lng: dest.longitude }
                 ]}
                 options={{
-                  strokeColor: '#64748b',
-                  strokeOpacity: 0.3,
-                  strokeWeight: 1,
+                  strokeColor: '#94a3b8',
+                  strokeOpacity: 0.5,
+                  strokeWeight: 2,
                   geodesic: true
                 }}
               />
@@ -376,14 +286,13 @@ const MapView = () => {
           </React.Fragment>
         ))}
 
-        {/* Animated Real Route */}
         {animatedPath.length > 0 && (
           <Polyline
             path={animatedPath}
             options={{
               strokeColor: '#3b82f6',
               strokeOpacity: 0.9,
-              strokeWeight: 4,
+              strokeWeight: 5,
               geodesic: true
             }}
           />
@@ -392,61 +301,61 @@ const MapView = () => {
 
       {/* Side Panel Overlay */}
       {selectedWarehouse && (
-        <div className="absolute top-4 left-4 w-80 bg-bg-elevated border border-border rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[calc(100%-2rem)]">
+        <div className="absolute top-4 left-4 w-80 bg-surface border border-border-light rounded-[24px] shadow-lg overflow-hidden flex flex-col max-h-[calc(100%-2rem)]">
           
-          <div className="p-4 border-b border-border">
+          <div className="p-6 border-b border-border-light bg-surface">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-text-primary mb-1">{selectedWarehouse.name}</h2>
-                <div className="flex items-center text-text-muted text-sm gap-1">
+                <h2 className="text-xl font-bold text-text-primary mb-1">{selectedWarehouse.name}</h2>
+                <div className="flex items-center text-text-secondary text-sm gap-1 font-medium tracking-wide">
                   <MapPin size={14} />
                   <span>{selectedWarehouse.city}, {selectedWarehouse.state}</span>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedWarehouse(null)}
-                className="text-text-muted hover:text-text-primary p-1"
+                className="text-text-muted hover:text-text-primary bg-surface-container-low rounded-full w-8 h-8 flex items-center justify-center transition-colors"
               >
                 ✕
               </button>
             </div>
           </div>
 
-          <div className="p-4 flex flex-col gap-4">
+          <div className="p-6 flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-bg-default p-3 rounded border border-border">
-                <div className="flex items-center gap-2 text-text-muted text-xs mb-1">
+              <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+                <div className="flex items-center gap-2 text-text-secondary font-bold text-[11px] uppercase tracking-widest mb-1">
                   <Package size={14} />
-                  <span>Total Inventory</span>
+                  <span>Inventory</span>
                 </div>
-                <div className="text-lg font-semibold text-text-primary">
+                <div className="text-2xl font-bold text-text-primary">
                   {(selectedWarehouse.totalInventoryKg / 1000).toFixed(1)}t
                 </div>
-                <div className="text-xs text-text-muted">{selectedWarehouse.totalBatches} batches</div>
+                <div className="text-xs text-text-muted font-medium mt-1">{selectedWarehouse.totalBatches} batches</div>
               </div>
               
-              <div className={`p-3 rounded border ${selectedWarehouse.atRiskKg > 0 ? 'bg-risk-highBg border-risk-high/30' : 'bg-bg-default border-border'}`}>
-                <div className={`flex items-center gap-2 text-xs mb-1 ${selectedWarehouse.atRiskKg > 0 ? 'text-risk-high' : 'text-text-muted'}`}>
+              <div className={`p-4 rounded-xl border ${selectedWarehouse.atRiskKg > 0 ? 'bg-error-container border-error-red/20' : 'bg-surface-container-low border-border-light'}`}>
+                <div className={`flex items-center gap-2 font-bold text-[11px] uppercase tracking-widest mb-1 ${selectedWarehouse.atRiskKg > 0 ? 'text-error-red' : 'text-text-secondary'}`}>
                   <AlertTriangle size={14} />
                   <span>At-Risk</span>
                 </div>
-                <div className={`text-lg font-semibold ${selectedWarehouse.atRiskKg > 0 ? 'text-risk-high' : 'text-text-primary'}`}>
+                <div className={`text-2xl font-bold ${selectedWarehouse.atRiskKg > 0 ? 'text-error-red' : 'text-text-primary'}`}>
                   {(selectedWarehouse.atRiskKg / 1000).toFixed(1)}t
                 </div>
-                <div className={`text-xs ${selectedWarehouse.atRiskKg > 0 ? 'text-risk-high/80' : 'text-text-muted'}`}>
+                <div className={`text-xs font-medium mt-1 ${selectedWarehouse.atRiskKg > 0 ? 'text-error-red/80' : 'text-text-muted'}`}>
                   {selectedWarehouse.totalInventoryKg > 0 
                     ? Math.round((selectedWarehouse.atRiskKg / selectedWarehouse.totalInventoryKg) * 100)
-                    : 0}% of capacity
+                    : 0}% capacity
                 </div>
               </div>
             </div>
 
             <button 
               onClick={toggleDestinations}
-              className={`w-full py-2 px-4 rounded font-medium transition-colors border ${
+              className={`w-full py-3 px-4 rounded-full font-bold transition-colors border shadow-sm ${
                 showDestinations 
-                  ? 'bg-bg-default text-text-primary border-border hover:bg-bg-hover' 
-                  : 'bg-accent/10 text-accent border-accent/20 hover:bg-accent/20'
+                  ? 'bg-surface text-text-primary border-border-light hover:bg-surface-dim' 
+                  : 'bg-primary text-white border-primary hover:bg-primary-container'
               }`}
             >
               {showDestinations ? 'Hide Destinations' : 'Show Delivery Routes'}
@@ -454,36 +363,36 @@ const MapView = () => {
           </div>
 
           {showDestinations && (
-            <div className="overflow-y-auto p-4 pt-0 flex flex-col gap-3">
-              <h3 className="text-sm font-medium text-text-primary mb-1">Nearby Destinations</h3>
+            <div className="overflow-y-auto p-6 pt-0 flex flex-col gap-3">
+              <h3 className="text-[11px] font-bold tracking-widest text-text-secondary uppercase mb-2">Nearby Destinations</h3>
               {destinations.map(dest => (
                 <div 
                   key={dest._id} 
                   onClick={() => handleDestinationClick(dest)}
-                  className={`flex flex-col p-3 rounded border cursor-pointer transition-colors ${
+                  className={`flex flex-col p-4 rounded-xl border cursor-pointer transition-colors ${
                     selectedRouteDest?._id === dest._id 
-                      ? 'bg-accent/10 border-accent/50 ring-1 ring-accent/50' 
-                      : 'bg-bg-default border-border hover:bg-bg-hover'
+                      ? 'bg-info-blue/10 border-info-blue/30 ring-1 ring-info-blue/30' 
+                      : 'bg-surface border-border-light hover:bg-surface-dim shadow-sm'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-text-primary text-sm truncate pr-2" title={dest.name}>{dest.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-bg-elevated border border-border text-text-muted capitalize whitespace-nowrap">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-bold text-text-primary text-sm truncate pr-2" title={dest.name}>{dest.name}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container-low border border-border-light text-text-secondary font-bold uppercase tracking-wider whitespace-nowrap">
                       {dest.type.replace('_', ' ')}
                     </span>
                   </div>
                   {dest.address && (
-                    <div className="text-[10px] text-text-muted mb-2 truncate" title={dest.address}>
+                    <div className="text-[11px] font-medium text-text-secondary mb-3 truncate" title={dest.address}>
                       <MapPin size={10} className="inline mr-1" />
                       {dest.address}
                     </div>
                   )}
-                  <div className="flex items-center justify-between text-xs text-text-muted">
+                  <div className="flex items-center justify-between text-xs font-bold text-text-secondary border-t border-border-light pt-2">
                     <div className="flex items-center gap-1">
                       <Truck size={12} />
                       <span>{dest.distanceFromWarehouseKm.toFixed(1)} km</span>
                     </div>
-                    <span>~{dest.durationFromWarehouseMinutes} mins</span>
+                    <span className="text-text-muted">~{dest.durationFromWarehouseMinutes} mins</span>
                   </div>
                 </div>
               ))}

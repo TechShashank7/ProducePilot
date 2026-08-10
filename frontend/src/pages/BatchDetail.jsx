@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle, AlertTriangle, Image as ImageIcon } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { ArrowLeft, Upload, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import RiskBadge from '../components/ui/RiskBadge';
 import { fetchApi } from '../services/api';
 import { useToast } from '../components/ui/Toast';
@@ -107,11 +106,11 @@ const BatchDetail = () => {
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center p-12">
-        <AlertTriangle size={48} className="text-risk-critical mb-4" />
-        <h2 className="text-xl font-medium text-text-primary">Batch Not Found</h2>
-        <button onClick={fetchDetail} className="mt-4 px-6 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">Retry</button>
-        <Link to="/" className="mt-4 text-accent hover:underline">Return to Dashboard</Link>
+      <div className="flex flex-col items-center justify-center p-12 bg-surface rounded-[24px] shadow-sm">
+        <AlertTriangle size={48} className="text-error-red mb-4" />
+        <h2 className="text-xl font-bold text-text-primary">Batch Not Found</h2>
+        <button onClick={fetchDetail} className="mt-4 px-6 py-2.5 bg-primary hover:bg-primary-container text-white font-bold rounded-full transition-colors">Retry</button>
+        <Link to="/" className="mt-4 text-primary font-medium hover:underline">Return to Dashboard</Link>
       </div>
     );
   }
@@ -124,17 +123,19 @@ const BatchDetail = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-bg-hover text-text-muted transition-colors">
+          <Link to="/" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-dim text-text-secondary transition-colors">
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold text-text-primary">
+            <h1 className="text-headline-page text-text-primary">
               {batch.productRef.name}
             </h1>
-            <p className="text-text-secondary">{batch.batchCode}</p>
+            <p className="text-text-secondary font-medium tracking-wide">{batch.batchCode}</p>
           </div>
         </div>
-        <RiskBadge riskPct={riskResult.riskPct} category={riskResult.riskCategory} />
+        <div className="mr-2">
+          <RiskBadge riskPct={riskResult.riskPct} category={riskResult.riskCategory} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -143,75 +144,75 @@ const BatchDetail = () => {
         <div className="lg:col-span-2 flex flex-col gap-6">
           
           {/* Risk Breakdown */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-text-primary">Risk Breakdown</h2>
+          <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-headline-section text-text-primary">Risk Breakdown</h2>
               {riskResult.visualFactored ? (
-                <span className="px-2 py-1 bg-accent/20 text-accent text-xs font-semibold rounded-full flex items-center gap-1">
-                  <ImageIcon size={12} />
+                <span className="px-3 py-1 bg-gradient-to-r from-[#DCEBFB] to-[#C7DFF8] text-info-blue text-xs font-bold rounded-full flex items-center gap-1 border border-info-blue/10">
+                  <ImageIcon size={14} />
                   AI-verified via photo
                 </span>
               ) : (
-                <span className="px-2 py-1 bg-bg-elevated text-text-muted border border-border text-xs font-semibold rounded-full flex items-center gap-1">
-                  Estimated from storage data only
+                <span className="px-3 py-1 bg-surface-container-low text-text-secondary border border-border-light text-xs font-bold rounded-full flex items-center gap-1">
+                  Estimated from storage data
                 </span>
               )}
             </div>
             
             {breakdown.chillingInjuryWarning && (
-              <div className="mb-6 p-4 rounded-md bg-risk-criticalBg border border-risk-critical text-risk-critical">
+              <div className="mb-6 p-4 rounded-xl bg-error-container border border-error-red/20 text-error-red">
                 <div className="flex items-center gap-2 mb-1">
                   <AlertTriangle size={18} />
-                  <span className="font-semibold">Chilling Injury Warning</span>
+                  <span className="font-bold">Chilling Injury Warning</span>
                 </div>
-                <p className="text-sm">
+                <p className="text-sm font-medium opacity-90">
                   The current temperature ({batch.currentStorageTempC}°C) is significantly below the ideal minimum for this product. 
                   This accelerates spoilage due to chilling injury.
                 </p>
               </div>
             )}
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 text-sm">
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Days Since Harvest</span>
-                <span className="font-medium text-text-primary">{breakdown.daysSinceHarvest.toFixed(1)} days</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 text-sm">
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Days Since Harvest</span>
+                <span className="font-bold text-text-primary">{breakdown.daysSinceHarvest.toFixed(1)} days</span>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Estimated Days Remaining</span>
-                <span className="font-medium text-text-primary">{riskResult.estimatedDaysRemaining.toFixed(1)} days</span>
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Estimated Days Remaining</span>
+                <span className="font-bold text-text-primary">{riskResult.estimatedDaysRemaining.toFixed(1)} days</span>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Current Temp</span>
-                <span className="font-medium text-text-primary">{batch.currentStorageTempC}°C <span className="text-text-muted font-normal">(Ideal: {batch.productRef.idealStorageTempC.min}-{batch.productRef.idealStorageTempC.max}°C)</span></span>
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Current Temp</span>
+                <span className="font-bold text-text-primary">{batch.currentStorageTempC}°C <span className="text-text-muted font-normal">(Ideal: {batch.productRef.idealStorageTempC.min}-{batch.productRef.idealStorageTempC.max}°C)</span></span>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Current Humidity</span>
-                <span className="font-medium text-text-primary">{batch.currentStorageHumidityPct}% <span className="text-text-muted font-normal">(Ideal: {batch.productRef.idealHumidityPct.min}-{batch.productRef.idealHumidityPct.max}%)</span></span>
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Current Humidity</span>
+                <span className="font-bold text-text-primary">{batch.currentStorageHumidityPct}% <span className="text-text-muted font-normal">(Ideal: {batch.productRef.idealHumidityPct.min}-{batch.productRef.idealHumidityPct.max}%)</span></span>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Humidity Risk Multiplier</span>
-                <span className="font-medium text-text-primary">{breakdown.humidityStressMultiplier.toFixed(2)}x</span>
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Humidity Risk Multiplier</span>
+                <span className="font-bold text-text-primary">{breakdown.humidityStressMultiplier.toFixed(2)}x</span>
               </div>
-              <div className="flex justify-between border-b border-border pb-2">
-                <span className="text-text-muted">Temp Risk Multiplier</span>
-                <span className="font-medium text-text-primary">{breakdown.tempRateMultiplier.toFixed(2)}x</span>
+              <div className="flex justify-between border-b border-border-light pb-3">
+                <span className="text-text-secondary font-medium">Temp Risk Multiplier</span>
+                <span className="font-bold text-text-primary">{breakdown.tempRateMultiplier.toFixed(2)}x</span>
               </div>
             </div>
-          </Card>
+          </div>
 
           {/* Rescue Action Card */}
-          <Card>
-            <h2 className="text-lg font-medium text-text-primary mb-2">Rescue Action</h2>
-            <p className="text-sm text-text-secondary mb-6">
+          <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50">
+            <h2 className="text-headline-section text-text-primary mb-2">Rescue Action</h2>
+            <p className="text-sm font-medium text-text-secondary mb-6">
               Evaluate available destinations or discard this batch based on its viability.
             </p>
             
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               {hasViableCandidates ? (
                 <button
                   onClick={(e) => handleAcceptClick(e, batch._id)}
                   disabled={actionInProgressId === batch._id}
-                  className="px-6 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors disabled:opacity-50"
+                  className="px-8 py-3 bg-primary hover:bg-primary-container text-white font-bold rounded-full transition-colors disabled:opacity-50 shadow-sm"
                 >
                   {actionInProgressId === batch._id ? 'Processing...' : 'Accept AI Rescue Plan'}
                 </button>
@@ -219,24 +220,24 @@ const BatchDetail = () => {
                 <button
                   onClick={(e) => handleWriteOff(e, batch._id)}
                   disabled={actionInProgressId === batch._id}
-                  className="px-6 py-2 bg-risk-criticalBg text-risk-critical hover:bg-risk-critical hover:text-white border border-risk-critical font-medium rounded transition-colors disabled:opacity-50"
+                  className="px-8 py-3 bg-error-red/10 text-error-red hover:bg-error-red hover:text-white border border-error-red/20 font-bold rounded-full transition-colors disabled:opacity-50"
                 >
                   {actionInProgressId === batch._id ? 'Processing...' : 'Write off as Total Loss'}
                 </button>
               )}
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Right Column: Visual Assessment */}
         <div className="flex flex-col gap-6">
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-medium text-text-primary">Visual Assessment</h2>
+          <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-headline-section text-text-primary">Visual Assessment</h2>
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 px-3 py-1.5 bg-bg-elevated hover:bg-bg-hover text-sm font-medium text-text-primary border border-border rounded transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-surface hover:bg-surface-dim text-sm font-bold text-text-primary border border-border-light shadow-sm rounded-full transition-colors disabled:opacity-50"
               >
                 <Upload size={16} />
                 {uploading ? 'Analyzing...' : 'Upload Photo'}
@@ -251,26 +252,26 @@ const BatchDetail = () => {
             </div>
 
             {mismatchError && (
-              <div className="mb-4 p-3 rounded-md bg-risk-highBg border border-risk-high text-risk-high text-sm flex items-start gap-2">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <div className="mb-4 p-4 rounded-xl bg-warning-orange/10 border border-warning-orange/20 text-warning-orange text-sm flex items-start gap-2 font-medium">
+                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                 <p>{mismatchError}</p>
               </div>
             )}
 
             {uploading ? (
-              <div className="py-12 flex flex-col items-center justify-center text-text-muted">
-                <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p>Analyzing photo with Gemini...</p>
-              </div>
+               <div className="py-16 flex flex-col items-center justify-center text-text-secondary">
+                 <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+                 <p className="font-medium">Analyzing photo with Gemini...</p>
+               </div>
             ) : visualAssessments.length === 0 ? (
-              <div className="py-8 text-center text-text-muted text-sm border-2 border-dashed border-border rounded-md">
+              <div className="py-12 text-center text-text-secondary text-sm border-2 border-dashed border-border-light rounded-2xl font-medium bg-surface-container-low/50">
                 No visual assessments performed yet.
               </div>
             ) : (
               <div className="flex flex-col gap-6">
                 {/* Most recent assessment */}
-                <div className="flex flex-col gap-3">
-                  <div className="aspect-video w-full rounded-md overflow-hidden bg-bg-elevated border border-border">
+                <div className="flex flex-col gap-4">
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden bg-surface-dim border border-border-light shadow-inner">
                     <img 
                       src={visualAssessments[0].imageBase64} 
                       alt="Produce assessment" 
@@ -279,52 +280,52 @@ const BatchDetail = () => {
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-bg-elevated p-3 rounded border border-border">
-                      <span className="text-xs text-text-muted block mb-1">Condition Score</span>
-                      <span className="text-lg font-semibold text-text-primary">{visualAssessments[0].visualConditionScore}/100</span>
+                    <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+                      <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-1">Condition</span>
+                      <span className="text-2xl font-bold text-text-primary">{visualAssessments[0].visualConditionScore}/100</span>
                     </div>
-                    <div className="bg-bg-elevated p-3 rounded border border-border">
-                      <span className="text-xs text-text-muted block mb-1">Ripeness</span>
-                      <span className="text-lg font-semibold text-text-primary capitalize">{visualAssessments[0].ripenessStage}</span>
+                    <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+                      <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-1">Ripeness</span>
+                      <span className="text-2xl font-bold text-text-primary capitalize">{visualAssessments[0].ripenessStage}</span>
                     </div>
                   </div>
 
-                  <div className="bg-bg-elevated p-3 rounded border border-border text-sm">
-                    <span className="text-xs text-text-muted block mb-1">Defects</span>
+                  <div className="bg-surface-container-low p-4 rounded-xl border border-border-light text-sm">
+                    <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-2">Defects</span>
                     {visualAssessments[0].defectsDetected.length > 0 ? (
-                      <ul className="list-disc pl-4 text-text-primary">
+                      <ul className="list-disc pl-5 text-text-primary font-medium space-y-1">
                         {visualAssessments[0].defectsDetected.map((d, i) => (
                           <li key={i}>{d}</li>
                         ))}
                       </ul>
                     ) : (
-                      <span className="text-text-primary">None detected</span>
+                      <span className="text-text-primary font-medium">None detected</span>
                     )}
                   </div>
 
-                  <div className="bg-bg-elevated p-3 rounded border border-border text-sm">
-                    <span className="text-xs text-text-muted block mb-1">AI Rationale</span>
-                    <p className="text-text-primary italic">"{visualAssessments[0].modelRationale}"</p>
+                  <div className="bg-gradient-to-br from-[#DCEBFB]/30 to-[#C7DFF8]/30 p-4 rounded-xl border border-info-blue/10 text-sm">
+                    <span className="text-[11px] uppercase tracking-widest text-info-blue font-bold block mb-2 flex items-center gap-1"><ImageIcon size={12}/> AI Rationale</span>
+                    <p className="text-text-primary italic font-medium leading-relaxed">"{visualAssessments[0].modelRationale}"</p>
                   </div>
                 </div>
 
                 {/* History */}
                 {visualAssessments.length > 1 && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <h3 className="text-sm font-medium text-text-primary mb-3">Previous Assessments</h3>
+                  <div className="mt-4 pt-6 border-t border-border-light">
+                    <h3 className="text-sm font-bold tracking-wide text-text-primary mb-4 uppercase">Previous Assessments</h3>
                     <div className="flex flex-col gap-3">
                       {visualAssessments.slice(1).map((assessment) => (
-                        <div key={assessment._id} className="flex gap-3 items-center p-2 rounded bg-bg-elevated border border-border">
+                        <div key={assessment._id} className="flex gap-4 items-center p-3 rounded-xl bg-surface hover:bg-surface-dim border border-border-light transition-colors">
                           <img 
                             src={assessment.imageBase64} 
                             alt="thumb" 
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-14 h-14 object-cover rounded-lg shadow-sm"
                           />
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-text-primary">
+                            <span className="text-sm font-bold text-text-primary">
                               Score: {assessment.visualConditionScore} ({assessment.ripenessStage})
                             </span>
-                            <span className="text-xs text-text-muted">{timeAgo(assessment.createdAt)}</span>
+                            <span className="text-xs font-medium text-text-muted mt-1 uppercase tracking-wider">{timeAgo(assessment.createdAt)}</span>
                           </div>
                         </div>
                       ))}
@@ -333,7 +334,7 @@ const BatchDetail = () => {
                 )}
               </div>
             )}
-          </Card>
+          </div>
         </div>
       </div>
       <RescueActionModal />

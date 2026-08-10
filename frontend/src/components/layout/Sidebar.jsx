@@ -10,9 +10,7 @@ const Sidebar = () => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Inventory', icon: Package, path: '/inventory' },
     { name: 'Map Interface', icon: Map, path: '/map' },
-    { name: 'Finance', icon: Calculator, path: '/finance' },
-    { name: 'Tools', icon: Wrench, path: '/tools' },
-    { name: 'Settings', icon: Settings, path: '/settings' },
+    { name: 'Agents', icon: Bot, path: '/agents' },
   ];
 
   return (
@@ -28,7 +26,6 @@ const Sidebar = () => {
         {!collapsed && (
           <div className="flex flex-col overflow-hidden">
             <span className="font-semibold text-white text-sm truncate">ProducePilot</span>
-            <span className="text-white/70 text-xs truncate">Warehouse Ops</span>
           </div>
         )}
       </div>

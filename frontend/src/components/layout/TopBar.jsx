@@ -1,12 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, ChevronDown, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useWarehouse } from '../../context/WarehouseContext';
+import { fetchApi } from '../../services/api';
+import { useToast } from '../ui/Toast';
 
 const TopBar = () => {
   const { warehouses, selectedWarehouseId, setSelectedWarehouseId, loading } = useWarehouse();
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const toast = useToast();
   
   const selectedWarehouse = warehouses.find(w => w._id === selectedWarehouseId);
   const displayName = loading ? 'Loading...' : (selectedWarehouse?.name || 'NCR Central Hub');
+
+  const handleSearch = async (e) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      try {
+        const data = await fetchApi(`/batches?warehouseId=${selectedWarehouseId || 'all'}&batchCode=${searchQuery.trim()}`);
+        if (data.batches && data.batches.length > 0) {
+          navigate(`/batches/${data.batches[0]._id}`);
+          setSearchQuery('');
+        } else {
+          toast.error("No batch found with that code.");
+        }
+      } catch (err) {
+        toast.error("Failed to search batches.");
+      }
+    }
+  };
+
+  const handleBellClick = () => {
+    toast.success("No new notifications at the moment!");
+  };
 
   return (
     <div className="h-16 flex items-center justify-between px-6 sticky top-0 z-10 bg-transparent mb-4">
@@ -43,12 +69,18 @@ const TopBar = () => {
           </div>
           <input
             type="text"
-            placeholder="Search inventory, agents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
+            placeholder="Search batch (e.g. B-2026-0136)..."
             className="bg-surface border border-border-light text-text-primary text-sm rounded-full pl-10 pr-4 py-2 focus:outline-none focus:border-primary w-64 shadow-sm transition-colors placeholder:text-text-muted"
           />
         </div>
 
-        <button className="relative w-10 h-10 bg-surface rounded-full border border-border-light shadow-sm flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors">
+        <button 
+          onClick={handleBellClick}
+          className="relative w-10 h-10 bg-surface rounded-full border border-border-light shadow-sm flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors"
+        >
           <Bell size={18} />
           <span className="absolute top-2 right-2 w-2 h-2 bg-error-red rounded-full border border-surface"></span>
         </button>
