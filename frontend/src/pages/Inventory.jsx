@@ -50,7 +50,7 @@ const Inventory = () => {
   };
 
   const fetchBatches = async (pageNum) => {
-    setLoading(true);
+    setLoading(batches.length === 0);
     try {
       let url = `/batches?page=${pageNum}&pageSize=${pageSize}`;
       if (selectedWarehouseId !== 'all') url += `&warehouseId=${selectedWarehouseId}`;

@@ -9,7 +9,7 @@ const Sidebar = () => {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Inventory', icon: Package, path: '/inventory' },
-    { name: 'Map Interface', icon: Map, path: '/map' },
+    { name: 'Map', icon: Map, path: '/map' },
     { name: 'Agents', icon: Bot, path: '/agents' },
   ];
 

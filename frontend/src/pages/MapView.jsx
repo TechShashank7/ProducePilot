@@ -50,7 +50,7 @@ const MapView = () => {
 
   const fetchMapOverview = async () => {
     try {
-      setLoading(true);
+      setLoading(warehouses.length === 0);
       const data = await fetchApi('/map/overview');
       setWarehouses(data);
       

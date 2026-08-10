@@ -98,7 +98,7 @@ const Agents = () => {
   }, [selectedAgent]);
 
   const fetchInitialData = async () => {
-    setLoading(true);
+    setLoading(!stats);
     try {
       const [statsData, timelineData] = await Promise.all([
         fetchApi('/agents/stats'),

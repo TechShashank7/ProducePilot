@@ -33,10 +33,10 @@ const BatchDetail = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
-  const fetchDetail = async () => {
+  const fetchDetail = async (force = false) => {
     try {
-      setLoading(true);
-      const res = await fetchApi(`/batches/${id}/detail`);
+      setLoading(!data); // Only show loading spinner if no data yet (for fast re-renders)
+      const res = await fetchApi(`/batches/${id}/detail`, {}, force);
       setData(res);
       setError(null);
     } catch (err) {

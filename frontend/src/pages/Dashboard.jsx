@@ -45,7 +45,7 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     if (!selectedWarehouseId) return;
     
-    setLoading(true);
+    setLoading(!summary);
     setError(null);
     try {
       const qs = `?warehouseId=${selectedWarehouseId}`;
@@ -72,9 +72,9 @@ const Dashboard = () => {
   const refetchSummaryOnly = async () => {
     if (!selectedWarehouseId) return;
     try {
-      const summaryData = await fetchApi(`/dashboard/summary?warehouseId=${selectedWarehouseId}`);
+      const summaryData = await fetchApi(`/dashboard/summary?warehouseId=${selectedWarehouseId}`, {}, true);
       setSummary(summaryData);
-      const activityData = await fetchApi(`/activity-log?warehouseId=${selectedWarehouseId}&limit=6`);
+      const activityData = await fetchApi(`/activity-log?warehouseId=${selectedWarehouseId}&limit=6`, {}, true);
       setActivities(activityData);
     } catch (e) {
       console.error("Failed to refetch summary", e);
