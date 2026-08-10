@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { fetchApi } from '../services/api';
+import { useAuth } from './AuthContext';
 
 const WarehouseContext = createContext();
 
@@ -12,6 +13,8 @@ export const useWarehouse = () => {
 };
 
 export const WarehouseProvider = ({ children }) => {
+  const { userRole, assignedWarehouseId } = useAuth();
+  
   const [warehouses, setWarehouses] = useState([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState(
     localStorage.getItem('selectedWarehouseId') || null
@@ -25,10 +28,13 @@ export const WarehouseProvider = ({ children }) => {
         setWarehouses(data);
         
         if (data.length > 0) {
-          // If stored ID doesn't exist in fetched data, fallback to first
-          const storedExists = data.some(w => w._id === selectedWarehouseId);
-          if (!selectedWarehouseId || !storedExists) {
-            setSelectedWarehouseId(data[0]._id);
+          if (userRole === 'worker' && assignedWarehouseId) {
+            setSelectedWarehouseId(assignedWarehouseId);
+          } else {
+            const storedExists = data.some(w => w._id === selectedWarehouseId);
+            if (!selectedWarehouseId || !storedExists) {
+              setSelectedWarehouseId(data[0]._id);
+            }
           }
         }
       } catch (error) {
@@ -39,13 +45,17 @@ export const WarehouseProvider = ({ children }) => {
     };
 
     loadWarehouses();
-  }, []);
+  }, [userRole, assignedWarehouseId]);
 
   useEffect(() => {
-    if (selectedWarehouseId) {
+    if (userRole === 'worker' && assignedWarehouseId) {
+       if (selectedWarehouseId !== assignedWarehouseId) {
+          setSelectedWarehouseId(assignedWarehouseId);
+       }
+    } else if (selectedWarehouseId) {
       localStorage.setItem('selectedWarehouseId', selectedWarehouseId);
     }
-  }, [selectedWarehouseId]);
+  }, [selectedWarehouseId, userRole, assignedWarehouseId]);
 
   return (
     <WarehouseContext.Provider 

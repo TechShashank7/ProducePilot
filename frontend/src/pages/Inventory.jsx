@@ -236,7 +236,7 @@ const Inventory = () => {
                   <tr 
                     key={batch._id} 
                     className="bg-bg-card hover:bg-bg-elevated transition-colors cursor-pointer group"
-                    onClick={() => navigate(`/batches/${batch._id}`)}
+                    onClick={() => navigate(`/app/batches/${batch._id}`)}
                   >
                     <td className="p-4 text-sm font-medium text-brand-primary group-hover:underline">
                       {batch.batchCode}

@@ -160,7 +160,7 @@ const Dashboard = () => {
                 ) : (
                   <div className="divide-y divide-border-light p-4">
                     {alerts.map((alert) => (
-                      <Link to={`/batches/${alert.batchId}`} key={alert.batchId} className="p-4 flex items-center justify-between hover:bg-surface-dim/30 rounded-xl transition-colors block">
+                      <Link to={`/app/batches/${alert.batchId}`} key={alert.batchId} className="p-4 flex items-center justify-between hover:bg-surface-dim/30 rounded-xl transition-colors block">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-full bg-error-container flex items-center justify-center flex-shrink-0">
                             <AlertTriangle size={20} className="text-error-red" />

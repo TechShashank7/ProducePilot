@@ -104,6 +104,33 @@ export default {
           critical: '#EF4444', criticalBg: '#fee2e2'
         },
         accent: { DEFAULT: '#006763', hover: '#00504c', muted: '#82d6c6' },
+        landing: {
+          bg: '#F8FAFC',
+          surface: '#FFFFFF',
+          border: '#E2E8F0',
+          text: {
+            primary: '#0F172A',
+            secondary: '#475569',
+          },
+          mint: {
+            100: '#D1FAE5',
+            200: '#A7F3D0',
+            500: '#10B981',
+            700: '#047857',
+          },
+          teal: {
+            500: '#14B8A6',
+            700: '#0F766E',
+          },
+          blue: {
+            100: '#DBEAFE',
+            200: '#BFDBFE',
+          },
+          pink: {
+            100: '#FCE7F3',
+            200: '#FBCFE8',
+          }
+        },
       },
       fontFamily: { 
         sans: ['Inter', 'system-ui', 'sans-serif'],

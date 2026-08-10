@@ -3,6 +3,7 @@ import { GoogleMap, useJsApiLoader, Marker, Polyline } from '@react-google-maps/
 import { fetchApi } from '../services/api';
 import { Package, AlertTriangle, Truck, MapPin } from 'lucide-react';
 import { useToast } from '../components/ui/Toast';
+import { useAuth } from '../context/AuthContext';
 
 const mapContainerStyle = {
   width: '100%',
@@ -33,6 +34,7 @@ const MapView = () => {
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
   });
 
+  const { userRole, assignedWarehouseId } = useAuth();
   const [warehouses, setWarehouses] = useState([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState(null);
   const [destinations, setDestinations] = useState([]);
@@ -52,10 +54,16 @@ const MapView = () => {
     try {
       setLoading(warehouses.length === 0);
       const data = await fetchApi('/map/overview');
-      setWarehouses(data);
       
-      if (data.length > 0 && mapRef.current) {
-        fitBoundsToWarehouses(data, mapRef.current);
+      let displayWarehouses = data;
+      if (userRole === 'worker' && assignedWarehouseId) {
+         displayWarehouses = data.filter(w => w._id === assignedWarehouseId);
+      }
+      
+      setWarehouses(displayWarehouses);
+      
+      if (displayWarehouses.length > 0 && mapRef.current) {
+        fitBoundsToWarehouses(displayWarehouses, mapRef.current);
       }
       setError(null);
     } catch (err) {

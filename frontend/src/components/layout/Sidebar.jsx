@@ -7,10 +7,10 @@ const Sidebar = () => {
   const location = useLocation();
 
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Inventory', icon: Package, path: '/inventory' },
-    { name: 'Map', icon: Map, path: '/map' },
-    { name: 'Agents', icon: Bot, path: '/agents' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/app' },
+    { name: 'Inventory', icon: Package, path: '/app/inventory' },
+    { name: 'Map', icon: Map, path: '/app/map' },
+    { name: 'Agents', icon: Bot, path: '/app/agents' },
   ];
 
   return (
@@ -33,7 +33,9 @@ const Sidebar = () => {
       <nav className="flex-1 px-4 py-2 flex flex-col gap-2 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+          const isActive = item.path === '/app'
+            ? location.pathname === '/app' || location.pathname === '/app/'
+            : location.pathname.startsWith(item.path);
           return (
             <Link
               key={item.name}
