@@ -9,6 +9,7 @@ import MapView from './pages/MapView';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Landing from './pages/Landing';
+import CheckFreshness from './pages/CheckFreshness';
 import { WarehouseProvider } from './context/WarehouseContext';
 import { ToastProvider } from './components/ui/Toast';
 import { AuthProvider } from './context/AuthContext';
@@ -34,6 +35,7 @@ function App() {
                   <Route index element={<Dashboard />} />
                   <Route path="inventory" element={<Inventory />} />
                   <Route path="agents" element={<Agents />} />
+                  <Route path="freshness" element={<CheckFreshness />} />
                   <Route path="batches/:id" element={<BatchDetail />} />
                   <Route path="map" element={<MapView />} />
                 </Route>
