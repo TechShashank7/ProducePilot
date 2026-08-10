@@ -7,15 +7,93 @@ import { getDeterministicCandidates } from '../services/rescueEngine.js';
 
 export const getBatches = async (req, res) => {
   try {
-    const { warehouseId, productId } = req.query;
+    const { warehouseId, productId, riskCategory, sortBy, order, page = 1, pageSize = 20 } = req.query;
     const filter = {};
-    if (warehouseId) filter.warehouseRef = warehouseId;
-    if (productId) filter.productRef = productId;
+    if (warehouseId && warehouseId !== 'all') filter.warehouseRef = warehouseId;
+    if (productId && productId !== 'all') filter.productRef = productId;
 
-    const batches = await Batch.find(filter)
+    // 1. Fetch batches
+    let batches = await Batch.find(filter)
       .populate('productRef', 'name category')
       .populate('warehouseRef', 'name city state');
-    res.json(batches);
+
+    // 2. Fetch quality params & visual assessments for risk computation
+    const productIds = [...new Set(batches.map(b => b.productRef._id.toString()))];
+    const qualityParams = await QualityParam.find({ productRef: { $in: productIds } });
+    const qpMap = {};
+    qualityParams.forEach(qp => { qpMap[qp.productRef.toString()] = qp; });
+
+    const batchIds = batches.map(b => b._id);
+    const visualAssessments = await VisualAssessment.find({
+      batchRef: { $in: batchIds },
+      mismatchFlagged: { $ne: true }
+    }).sort({ createdAt: -1 });
+
+    const vaMap = {};
+    visualAssessments.forEach(va => {
+      const bId = va.batchRef.toString();
+      if (!vaMap[bId]) vaMap[bId] = va; // keep the latest one
+    });
+
+    // 3. Compute dynamic risk and attach to batch
+    let processedBatches = batches.map(batch => {
+      const qp = qpMap[batch.productRef._id.toString()];
+      const va = vaMap[batch._id.toString()];
+      
+      let riskResult = null;
+      if (qp) {
+        riskResult = computeSpoilageRisk({ batch, product: batch.productRef, qualityParam: qp, latestVisualAssessment: va });
+      }
+
+      return {
+        ...batch.toObject(),
+        riskPct: riskResult ? riskResult.riskPct : 0,
+        riskCategory: riskResult ? riskResult.riskCategory : 'unknown',
+        daysRemaining: riskResult ? riskResult.estimatedDaysRemaining : 0,
+      };
+    });
+
+    // 4. In-memory Filter by Risk Category
+    if (riskCategory && riskCategory !== 'all') {
+      processedBatches = processedBatches.filter(b => b.riskCategory === riskCategory);
+    }
+
+    // 5. In-memory Sort
+    if (sortBy) {
+      const isDesc = order === 'desc';
+      processedBatches.sort((a, b) => {
+        let valA, valB;
+        if (sortBy === 'risk') {
+          valA = a.riskPct;
+          valB = b.riskPct;
+        } else if (sortBy === 'quantity') {
+          valA = a.quantityKg;
+          valB = b.quantityKg;
+        } else if (sortBy === 'receivedDate') {
+          valA = new Date(a.receivedDate).getTime();
+          valB = new Date(b.receivedDate).getTime();
+        }
+
+        if (valA < valB) return isDesc ? 1 : -1;
+        if (valA > valB) return isDesc ? -1 : 1;
+        return 0;
+      });
+    } else {
+      // Default sort by received date descending
+      processedBatches.sort((a, b) => new Date(b.receivedDate).getTime() - new Date(a.receivedDate).getTime());
+    }
+
+    // 6. Pagination
+    const totalCount = processedBatches.length;
+    const skip = (parseInt(page, 10) - 1) * parseInt(pageSize, 10);
+    const paginatedBatches = processedBatches.slice(skip, skip + parseInt(pageSize, 10));
+
+    res.json({
+      batches: paginatedBatches,
+      totalCount,
+      page: parseInt(page, 10),
+      pageSize: parseInt(pageSize, 10)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
