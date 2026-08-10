@@ -43,11 +43,13 @@ const Dashboard = () => {
   const [alerts, setAlerts] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchDashboardData = async () => {
     if (!selectedWarehouseId) return;
     
     setLoading(true);
+    setError(null);
     try {
       const qs = `?warehouseId=${selectedWarehouseId}`;
       
@@ -65,6 +67,7 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error("Failed to load dashboard data", error);
+      setError("Failed to load dashboard data. Please try again.");
       toast.error("Failed to load dashboard data.");
     } finally {
       setLoading(false);
@@ -109,7 +112,18 @@ const Dashboard = () => {
         <h1 className="text-2xl font-semibold text-text-primary">Dashboard</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {error ? (
+        <div className="flex flex-col items-center justify-center p-12 bg-bg-card border border-border rounded-xl">
+          <AlertTriangle size={48} className="text-risk-critical mb-4" />
+          <h2 className="text-lg font-medium text-text-primary mb-2">Error Loading Dashboard</h2>
+          <p className="text-text-muted mb-4">{error}</p>
+          <button onClick={fetchDashboardData} className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">
+            Retry
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           label="Total Inventory"
           value={loading ? '...' : `${summary?.totalInventoryKg?.toLocaleString() || 0} kg`}
@@ -218,6 +232,8 @@ const Dashboard = () => {
           </Card>
         </div>
       </div>
+      </>
+      )}
 
       <RescueActionModal />
     </div>

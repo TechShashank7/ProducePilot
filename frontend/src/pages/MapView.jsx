@@ -117,6 +117,7 @@ const MapView = () => {
   const [destinations, setDestinations] = useState([]);
   const [showDestinations, setShowDestinations] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   const [selectedRouteDest, setSelectedRouteDest] = useState(null);
   const [fullRoutePath, setFullRoutePath] = useState([]);
@@ -136,8 +137,10 @@ const MapView = () => {
       if (data.length > 0 && mapRef.current) {
         fitBoundsToWarehouses(data, mapRef.current);
       }
+      setError(null);
     } catch (err) {
       console.error(err);
+      setError("Failed to load map data. Please try again.");
       toast.error("Failed to load map data");
     } finally {
       setLoading(false);
@@ -305,6 +308,19 @@ const MapView = () => {
 
   if (!isLoaded || loading) {
     return <div className="p-8 text-center text-text-muted">Loading map...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-6rem)] border border-border rounded-xl bg-bg-card">
+        <AlertTriangle size={48} className="text-risk-critical mb-4" />
+        <h2 className="text-lg font-medium text-text-primary mb-2">Error Loading Map Data</h2>
+        <p className="text-text-muted mb-4">{error}</p>
+        <button onClick={fetchMapOverview} className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

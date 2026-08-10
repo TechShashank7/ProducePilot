@@ -13,6 +13,7 @@ const Inventory = () => {
   const [products, setProducts] = useState([]);
   
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Filters & Pagination state
   const [productId, setProductId] = useState('all');
@@ -60,8 +61,10 @@ const Inventory = () => {
       const res = await fetchApi(url);
       setBatches(res.batches || []);
       setTotalCount(res.totalCount || 0);
+      setError(null);
     } catch (error) {
       console.error('Failed to load batches', error);
+      setError("Failed to load inventory batches. Please try again.");
       setBatches([]);
       setTotalCount(0);
     } finally {
@@ -185,7 +188,20 @@ const Inventory = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50">
-              {loading ? (
+              {error ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-text-muted">
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <AlertCircle size={48} className="text-risk-critical mb-3" />
+                      <p className="text-lg font-medium text-text-primary mb-1">Error Loading Inventory</p>
+                      <p className="text-sm mb-4">{error}</p>
+                      <button onClick={() => fetchBatches(page)} className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : loading ? (
                 // Loading Skeleton
                 Array(5).fill(0).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="animate-pulse bg-bg-card">

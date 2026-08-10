@@ -10,6 +10,9 @@ import Batch from '../models/Batch.js';
 import SalesRecord from '../models/SalesRecord.js';
 import QualityParam from '../models/QualityParam.js';
 import OperationalLog from '../models/OperationalLog.js';
+import AcceptedRescueAction from '../models/AcceptedRescueAction.js';
+import VisualAssessment from '../models/VisualAssessment.js';
+import AgentActivityLog from '../models/AgentActivityLog.js';
 
 // Generators
 import { createPRNG } from '../utils/generators/random.js';
@@ -34,32 +37,53 @@ async function seedDatabase() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB.');
 
-    // Clear collections
-    console.log('Clearing existing collections...');
-    await Product.deleteMany({});
-    await Warehouse.deleteMany({});
+    // Clear dependent collections
+    console.log('Clearing dependent collections (Batches, Logs, Rescues, Assessments)...');
     await Batch.deleteMany({});
     await SalesRecord.deleteMany({});
-    await QualityParam.deleteMany({});
     await OperationalLog.deleteMany({});
+    
+    const rescueCleared = await AcceptedRescueAction.deleteMany({});
+    const visualCleared = await VisualAssessment.deleteMany({});
+    const agentCleared = await AgentActivityLog.deleteMany({});
+    
+    console.log(`Cleared AcceptedRescueAction: ${rescueCleared.deletedCount}`);
+    console.log(`Cleared VisualAssessment: ${visualCleared.deletedCount}`);
+    console.log(`Cleared AgentActivityLog: ${agentCleared.deletedCount}`);
 
     // Initialize PRNG
     const prng = createPRNG(SEED);
 
-    // Generate Data
-    console.log('Generating realistic seed data...');
-    const products = generateProducts();
-    const warehouses = generateWarehouses();
-    const qualityParams = generateQualityParams(products, prng);
+    // Idempotent generation of Products, Warehouses, QualityParams
+    let products = await Product.find({}).lean();
+    let warehouses = await Warehouse.find({}).lean();
+    let qualityParams = await QualityParam.find({}).lean();
+
+    if (products.length === 0 || warehouses.length === 0 || qualityParams.length === 0) {
+      console.log('Generating base reference data (Products, Warehouses, QualityParams)...');
+      await Product.deleteMany({});
+      await Warehouse.deleteMany({});
+      await QualityParam.deleteMany({});
+
+      products = generateProducts();
+      warehouses = generateWarehouses();
+      qualityParams = generateQualityParams(products, prng);
+
+      await Product.insertMany(products);
+      await Warehouse.insertMany(warehouses);
+      await QualityParam.insertMany(qualityParams);
+    } else {
+      console.log('Reusing existing Products, Warehouses, and QualityParams.');
+    }
+
+    // Generate Dynamic Data
+    console.log('Generating realistic batch/sales seed data...');
     const batches = generateBatches(products, warehouses, 250, prng);
     const salesRecords = generateSalesRecords(products, warehouses, prng);
     const operationalLogs = generateOperationalLogs(warehouses, 15, prng);
 
-    // Insert Data
-    console.log('Inserting into database...');
-    await Product.insertMany(products);
-    await Warehouse.insertMany(warehouses);
-    await QualityParam.insertMany(qualityParams);
+    // Insert Dynamic Data
+    console.log('Inserting batches and logs into database...');
     await Batch.insertMany(batches);
     // Sales records can be large, insert in chunks
     const chunkSize = 2000;
@@ -70,9 +94,9 @@ async function seedDatabase() {
 
     // Summary Logging
     console.log('--- SEEDING COMPLETE ---');
-    console.log(`Products Inserted: ${products.length}`);
-    console.log(`Warehouses Inserted: ${warehouses.length}`);
-    console.log(`QualityParams Inserted: ${qualityParams.length}`);
+    console.log(`Products in DB: ${products.length}`);
+    console.log(`Warehouses in DB: ${warehouses.length}`);
+    console.log(`QualityParams in DB: ${qualityParams.length}`);
     console.log(`Batches Inserted: ${batches.length}`);
     console.log(`SalesRecords Inserted: ${salesRecords.length}`);
     console.log(`OperationalLogs Inserted: ${operationalLogs.length}`);
@@ -88,7 +112,7 @@ async function seedDatabase() {
       operationalLogs
     };
     
-    // Path relative to backend root (assuming run via `npm run seed` in backend dir)
+    // Path relative to backend root
     const snapshotPath = path.resolve(process.cwd(), '../data/generated/snapshot.json');
     
     // Ensure dir exists

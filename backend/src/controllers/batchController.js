@@ -14,7 +14,7 @@ export const getBatches = async (req, res) => {
 
     // 1. Fetch batches
     let batches = await Batch.find(filter)
-      .populate('productRef', 'name category')
+      .populate('productRef')
       .populate('warehouseRef', 'name city state');
 
     // 2. Fetch quality params & visual assessments for risk computation

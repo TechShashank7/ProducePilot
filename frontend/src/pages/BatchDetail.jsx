@@ -110,6 +110,7 @@ const BatchDetail = () => {
       <div className="flex flex-col items-center justify-center p-12">
         <AlertTriangle size={48} className="text-risk-critical mb-4" />
         <h2 className="text-xl font-medium text-text-primary">Batch Not Found</h2>
+        <button onClick={fetchDetail} className="mt-4 px-6 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">Retry</button>
         <Link to="/" className="mt-4 text-accent hover:underline">Return to Dashboard</Link>
       </div>
     );
