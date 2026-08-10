@@ -82,6 +82,7 @@ const Agents = () => {
   const [activities, setActivities] = useState([]);
   const [selectedAgent, setSelectedAgent] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [skip, setSkip] = useState(0);
   const limit = 20;
@@ -97,7 +98,7 @@ const Agents = () => {
   }, [selectedAgent]);
 
   const fetchInitialData = async () => {
-    setLoading(true);
+    setLoading(!stats);
     try {
       const [statsData, timelineData] = await Promise.all([
         fetchApi('/agents/stats'),
@@ -111,8 +112,10 @@ const Agents = () => {
         timeLabel: new Date(d.hour).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }));
       setTimeline(formattedTimeline);
+      setError(null);
     } catch (error) {
       console.error('Error fetching initial agent data:', error);
+      setError("Failed to load agent data. Is backend running?");
     } finally {
       setLoading(false);
     }
@@ -161,7 +164,19 @@ const Agents = () => {
   ];
 
   if (loading) return <div className="p-6 text-text-muted">Loading Agent Data...</div>;
-  if (!stats) return <div className="p-6 text-brand-error">Failed to load agent data. Is backend running?</div>;
+  
+  if (error || !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 bg-bg-card border border-border rounded-xl m-6">
+        <ShieldAlert size={48} className="text-risk-critical mb-4" />
+        <h2 className="text-lg font-medium text-text-primary mb-2">Error Loading Agent Data</h2>
+        <p className="text-text-muted mb-4">{error || "Failed to load agent data."}</p>
+        <button onClick={fetchInitialData} className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors">
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto flex flex-col gap-6">

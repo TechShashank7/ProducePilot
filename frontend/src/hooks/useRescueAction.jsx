@@ -87,48 +87,48 @@ export const useRescueAction = ({ onSuccess } = {}) => {
     if (!pendingRecommendation) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[100] p-4">
-        <div className="bg-bg-surface border border-border rounded-lg shadow-xl max-w-lg w-full overflow-hidden">
-          <div className="p-4 border-b border-border flex items-center justify-between">
-            <h3 className="text-lg font-medium text-text-primary">Confirm Rescue Action</h3>
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+        <div className="bg-surface border border-border-light rounded-[24px] shadow-xl max-w-lg w-full overflow-hidden">
+          <div className="p-6 border-b border-border-light flex items-center justify-between">
+            <h3 className="text-xl font-bold text-text-primary">Confirm Rescue Action</h3>
             <button 
               onClick={() => setPendingRecommendation(null)}
-              className="text-text-muted hover:text-text-primary"
+              className="text-text-muted hover:text-text-primary bg-surface-container-low rounded-full w-8 h-8 flex items-center justify-center transition-colors"
             >
               ✕
             </button>
           </div>
           
           <div className="p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-6">
               {pendingRecommendation.recData.aiRecommendation?.source === 'gemini' ? (
-                <span className="px-2 py-1 bg-accent/20 text-accent border border-accent/30 text-xs font-semibold rounded-full tracking-wide">
+                <span className="px-3 py-1 bg-gradient-to-r from-[#DCEBFB] to-[#C7DFF8] text-info-blue border border-info-blue/10 text-xs font-bold rounded-full tracking-wide">
                   ✨ AI-Assisted
                 </span>
               ) : (
-                <span className="px-2 py-1 bg-bg-elevated text-text-secondary border border-border text-xs font-semibold rounded-full tracking-wide">
+                <span className="px-3 py-1 bg-surface-container-low text-text-secondary border border-border-light text-xs font-bold rounded-full tracking-wide">
                   ⚙️ Automated Pick
                 </span>
               )}
-              <span className="text-sm font-medium text-text-primary">
+              <span className="text-sm font-bold text-text-primary">
                 {pendingRecommendation.recData.candidates[pendingRecommendation.recData.aiRecommendation?.recommendedCandidateIndex || 0]?.destination.name}
               </span>
             </div>
             
-            <div className="bg-bg-elevated p-4 rounded-md border border-border/50 text-sm text-text-secondary mb-6 leading-relaxed">
+            <div className="bg-surface-dim p-5 rounded-2xl border border-border-light text-sm text-text-secondary mb-8 leading-relaxed font-medium">
               "{pendingRecommendation.recData.aiRecommendation?.justification}"
             </div>
             
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setPendingRecommendation(null)}
-                className="px-4 py-2 bg-transparent text-text-primary hover:bg-bg-hover border border-border rounded transition-colors"
+                className="px-6 py-2.5 bg-transparent text-text-primary font-bold hover:bg-surface-dim border border-border-light rounded-full transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmAccept}
-                className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded transition-colors"
+                className="px-6 py-2.5 bg-primary hover:bg-primary-container text-white font-bold rounded-full transition-colors shadow-sm"
               >
                 Confirm & Dispatch
               </button>

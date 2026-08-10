@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
@@ -11,7 +12,8 @@ import { ToastProvider } from './components/ui/Toast';
 
 function App() {
   return (
-    <ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
       <WarehouseProvider>
         <Router>
           <Routes>
@@ -28,6 +30,7 @@ function App() {
         </Router>
       </WarehouseProvider>
     </ToastProvider>
+    </ErrorBoundary>
   );
 }
 
