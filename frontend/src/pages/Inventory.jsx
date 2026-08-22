@@ -50,7 +50,7 @@ const Inventory = () => {
   };
 
   const fetchBatches = async (pageNum) => {
-    setLoading(batches.length === 0);
+    setLoading(true);
     try {
       let url = `/batches?page=${pageNum}&pageSize=${pageSize}`;
       if (selectedWarehouseId !== 'all') url += `&warehouseId=${selectedWarehouseId}`;
@@ -259,7 +259,7 @@ const Inventory = () => {
                       {batch.daysRemaining}d
                     </td>
                     <td className="p-4 text-sm text-text-muted">
-                      {new Date(batch.receivedDate).toLocaleDateString()}
+                      {new Date(batch.receivedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                   </tr>
                 ))

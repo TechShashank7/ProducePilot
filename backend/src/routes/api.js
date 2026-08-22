@@ -1,8 +1,8 @@
 import express from 'express';
 
 import { getProducts } from '../controllers/productController.js';
-import { getWarehouses, getWarehouseDestinations, getMapOverview } from '../controllers/warehouseController.js';
-import { getBatches, getBatchDetail } from '../controllers/batchController.js';
+import { getWarehouses, getWarehouseDestinations, getMapOverview, createWarehouse } from '../controllers/warehouseController.js';
+import { getBatches, getBatchDetail, uploadBatch } from '../controllers/batchController.js';
 import { getRescueRecommendation, acceptRescueRecommendation, writeOffBatch } from '../controllers/rescueController.js';
 import { getSales } from '../controllers/salesController.js';
 import { getQualityParams } from '../controllers/qualityController.js';
@@ -16,8 +16,10 @@ const router = express.Router();
 
 router.get('/products', getProducts);
 router.get('/warehouses', getWarehouses);
+router.post('/warehouses', createWarehouse);
 router.get('/warehouses/:id/destinations', getWarehouseDestinations);
 router.get('/batches', getBatches);
+router.post('/batches/upload', uploadBatch);
 router.get('/batches/:id/detail', getBatchDetail);
 router.get('/batches/:id/recommendation', getRescueRecommendation);
 router.post('/batches/:id/recommendation/accept', acceptRescueRecommendation);

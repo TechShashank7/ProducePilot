@@ -21,29 +21,29 @@ export const WarehouseProvider = ({ children }) => {
   );
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadWarehouses = async () => {
-      try {
-        const data = await fetchApi('/warehouses');
-        setWarehouses(data);
-        
-        if (data.length > 0) {
-          if (userRole === 'worker' && assignedWarehouseId) {
-            setSelectedWarehouseId(assignedWarehouseId);
-          } else {
-            const storedExists = data.some(w => w._id === selectedWarehouseId);
-            if (!selectedWarehouseId || !storedExists) {
-              setSelectedWarehouseId(data[0]._id);
-            }
+  const loadWarehouses = async (force = false) => {
+    try {
+      const data = await fetchApi('/warehouses', {}, force);
+      setWarehouses(data);
+      
+      if (data.length > 0) {
+        if (userRole === 'worker' && assignedWarehouseId) {
+          setSelectedWarehouseId(assignedWarehouseId);
+        } else {
+          const storedExists = data.some(w => w._id === selectedWarehouseId);
+          if (!selectedWarehouseId || !storedExists) {
+            setSelectedWarehouseId(data[0]._id);
           }
         }
-      } catch (error) {
-        console.error("Failed to load warehouses", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Failed to load warehouses", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadWarehouses();
   }, [userRole, assignedWarehouseId]);
 
@@ -63,7 +63,8 @@ export const WarehouseProvider = ({ children }) => {
         warehouses, 
         selectedWarehouseId, 
         setSelectedWarehouseId,
-        loading 
+        loading,
+        refreshWarehouses: loadWarehouses
       }}
     >
       {children}

@@ -2,6 +2,8 @@ import Batch from '../models/Batch.js';
 import QualityParam from '../models/QualityParam.js';
 import Destination from '../models/Destination.js';
 import VisualAssessment from '../models/VisualAssessment.js';
+import Warehouse from '../models/Warehouse.js';
+import Product from '../models/Product.js';
 import { computeSpoilageRisk } from '../services/spoilageEngine.js';
 import { getDeterministicCandidates } from '../services/rescueEngine.js';
 
@@ -145,6 +147,84 @@ export const getBatchDetail = async (req, res) => {
       visualAssessments
     });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const uploadBatch = async (req, res) => {
+  try {
+    const { warehouseId, batches: batchesData } = req.body;
+    
+    if (!warehouseId || !Array.isArray(batchesData)) {
+      return res.status(400).json({ message: 'Payload must include warehouseId and an array of batches' });
+    }
+
+    const warehouse = await Warehouse.findById(warehouseId);
+    if (!warehouse) {
+      return res.status(404).json({ message: 'Selected warehouse not found' });
+    }
+
+    const createdBatches = [];
+
+    for (const data of batchesData) {
+      // 1. Find or create Product
+      let product = await Product.findOne({ name: data.productName });
+      if (!product) {
+        product = await Product.create({
+          name: data.productName,
+          category: data.productCategory,
+          typicalShelfLifeDays: {
+            min: parseInt(data.typicalShelfLifeDaysMin, 10),
+            max: parseInt(data.typicalShelfLifeDaysMax, 10)
+          },
+          idealStorageTempC: {
+            min: parseFloat(data.idealStorageTempCMin),
+            max: parseFloat(data.idealStorageTempCMax)
+          },
+          idealHumidityPct: {
+            min: parseFloat(data.idealHumidityPctMin),
+            max: parseFloat(data.idealHumidityPctMax)
+          }
+        });
+      }
+
+      // 2. Find or Create QualityParam for risk calc
+      let qualityParam = await QualityParam.findOne({ productRef: product._id });
+      if (!qualityParam) {
+        await QualityParam.create({
+          productRef: product._id,
+          brixRangeMin: 10,
+          brixRangeMax: 15,
+          firmnessIndexRange: {
+            min: 5,
+            max: 10
+          },
+          acceptableDefectPct: 2.5,
+          colorGradeDescription: "Standard Bright"
+        });
+      }
+
+      // 3. Create Batch
+      const uniqueBatchCode = `${data.batchCode}-${Date.now().toString().slice(-4)}${Math.floor(Math.random() * 100)}`;
+      
+      const batch = await Batch.create({
+        productRef: product._id,
+        warehouseRef: warehouse._id,
+        quantityKg: parseFloat(data.quantityKg),
+        receivedDate: new Date(data.receivedDate),
+        harvestDate: new Date(data.harvestDate),
+        currentStorageTempC: parseFloat(data.currentStorageTempC),
+        currentStorageHumidityPct: parseFloat(data.currentStorageHumidityPct),
+        batchCode: uniqueBatchCode,
+        sourceRegion: data.sourceRegion
+      });
+
+      createdBatches.push(batch);
+    }
+
+    res.status(201).json({ message: 'Upload successful', count: createdBatches.length });
+  } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: error.message });
   }
 };

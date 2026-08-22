@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Upload, AlertTriangle, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Upload, AlertTriangle, Image as ImageIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import RiskBadge from '../components/ui/RiskBadge';
 import { fetchApi } from '../services/api';
 import { useToast } from '../components/ui/Toast';
@@ -30,12 +31,16 @@ const BatchDetail = () => {
   const [error, setError] = useState(null);
   const [mismatchError, setMismatchError] = useState(null);
   
+  const [demandData, setDemandData] = useState(null);
+  const [demandLoading, setDemandLoading] = useState(false);
+  const [demandError, setDemandError] = useState(null);
+  
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   const fetchDetail = async (force = false) => {
+    setLoading(true);
     try {
-      setLoading(!data); // Only show loading spinner if no data yet (for fast re-renders)
       const res = await fetchApi(`/batches/${id}/detail`, {}, force);
       setData(res);
       setError(null);
@@ -50,6 +55,28 @@ const BatchDetail = () => {
   useEffect(() => {
     fetchDetail();
   }, [id]);
+
+  useEffect(() => {
+    if (data && data.batch) {
+      const fetchDemand = async () => {
+        setDemandLoading(true);
+        try {
+          const pId = typeof data.batch.productRef === 'object' ? data.batch.productRef._id : data.batch.productRef;
+          const wId = typeof data.batch.warehouseRef === 'object' ? data.batch.warehouseRef._id : data.batch.warehouseRef;
+          
+          const res = await fetchApi(`/forecast?productId=${pId}&warehouseId=${wId}&horizonDays=7`);
+          setDemandData(res);
+          setDemandError(null);
+        } catch (err) {
+          console.error("Demand forecast error", err);
+          setDemandError(err.message || "Failed to load forecast");
+        } finally {
+          setDemandLoading(false);
+        }
+      };
+      fetchDemand();
+    }
+  }, [data]);
 
   const {
     actionInProgressId,
@@ -110,7 +137,7 @@ const BatchDetail = () => {
         <AlertTriangle size={48} className="text-error-red mb-4" />
         <h2 className="text-xl font-bold text-text-primary">Batch Not Found</h2>
         <button onClick={fetchDetail} className="mt-4 px-6 py-2.5 bg-primary hover:bg-primary-container text-white font-bold rounded-full transition-colors">Retry</button>
-        <Link to="/" className="mt-4 text-primary font-medium hover:underline">Return to Dashboard</Link>
+        <Link to="/app" className="mt-4 text-primary font-medium hover:underline">Return to Dashboard</Link>
       </div>
     );
   }
@@ -118,12 +145,130 @@ const BatchDetail = () => {
   const { batch, riskResult, hasViableCandidates, visualAssessments } = data;
   const breakdown = riskResult.breakdown;
 
+  const renderDemandCard = () => {
+    if (demandLoading) {
+      return (
+        <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50 flex flex-col items-center justify-center min-h-[300px]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-text-secondary font-medium">Loading AI Demand Forecast...</p>
+        </div>
+      );
+    }
+  
+    if (demandError || !demandData) {
+      return (
+        <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50 flex flex-col items-center justify-center min-h-[300px]">
+          <AlertTriangle className="text-warning-orange mb-2" size={32} />
+          <p className="text-text-secondary font-medium">Demand forecast unavailable</p>
+        </div>
+      );
+    }
+  
+    const {
+      dailyForecast,
+      totalForecastedQtyKg,
+      trendDirection,
+      avgDailySalesLastWeek,
+      avgDailySalesPriorWeek,
+      confidenceNote
+    } = demandData;
+  
+    const pctChange = avgDailySalesPriorWeek > 0 
+      ? (((avgDailySalesLastWeek - avgDailySalesPriorWeek) / avgDailySalesPriorWeek) * 100).toFixed(1)
+      : 0;
+  
+    const isRising = trendDirection === 'rising';
+    const isFalling = trendDirection === 'falling';
+    const TrendIcon = isRising ? TrendingUp : (isFalling ? TrendingDown : Minus);
+    const trendColor = isRising ? 'text-success-green' : (isFalling ? 'text-error-red' : 'text-text-secondary');
+    const trendBg = isRising ? 'bg-success-green/10 border-success-green/20' : (isFalling ? 'bg-error-red/10 border-error-red/20' : 'bg-surface-container-low border-border-light');
+  
+    let insight = "Demand is stable. Maintain current distribution strategy.";
+    if (isRising) {
+      insight = "Demand is rising rapidly. Prioritize distribution and hold off on markdowns.";
+    } else if (isFalling) {
+      insight = "Demand is falling. Consider routing this batch to rescue partners or applying discount strategies early.";
+    }
+  
+    return (
+      <div className="bg-surface rounded-[24px] shadow-sm p-6 border border-border-light/50">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-headline-section text-text-primary">Demand Forecast (7-Day)</h2>
+          <span className={`px-3 py-1 text-xs font-bold rounded-full flex items-center gap-1 border ${trendBg} ${trendColor} capitalize`}>
+            <TrendIcon size={14} />
+            {trendDirection} Trend
+          </span>
+        </div>
+  
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+           <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+              <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-1">Projected 7-Day</span>
+              <span className="text-2xl font-bold text-text-primary">{totalForecastedQtyKg} <span className="text-sm font-normal text-text-muted">kg</span></span>
+           </div>
+           <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+              <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-1">Last Week Avg</span>
+              <span className="text-2xl font-bold text-text-primary">{avgDailySalesLastWeek} <span className="text-sm font-normal text-text-muted">kg/day</span></span>
+           </div>
+           <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
+              <span className="text-[11px] uppercase tracking-widest text-text-secondary font-bold block mb-1">Growth (WoW)</span>
+              <span className={`text-2xl font-bold ${Number(pctChange) > 0 ? 'text-success-green' : (Number(pctChange) < 0 ? 'text-error-red' : 'text-text-primary')}`}>
+                {Number(pctChange) > 0 ? '+' : ''}{pctChange}%
+              </span>
+           </div>
+        </div>
+  
+        <div className="h-64 mb-6 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={dailyForecast} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                stroke="#6b7280" 
+                fontSize={12} 
+                tickLine={false} 
+                axisLine={false}
+                tickFormatter={(val) => {
+                  const d = new Date(val);
+                  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                }}
+              />
+              <YAxis stroke="#6b7280" fontSize={12} tickLine={false} axisLine={false} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                itemStyle={{ color: '#111827', fontWeight: 'bold' }}
+                labelStyle={{ color: '#6b7280', marginBottom: '4px' }}
+              />
+              <Line 
+                type="monotone" 
+                dataKey="projectedQtyKg" 
+                name="Forecast (kg)"
+                stroke="#8B5CF6" 
+                strokeWidth={3}
+                dot={{ r: 4, strokeWidth: 2, fill: '#ffffff', stroke: '#8B5CF6' }}
+                activeDot={{ r: 6, fill: '#8B5CF6', stroke: '#ffffff' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+  
+        <div className="bg-gradient-to-br from-[#F5F3FF] to-[#EDE9FE] p-4 rounded-xl border border-violet-200">
+          <span className="text-[11px] uppercase tracking-widest text-violet-700 font-bold block mb-2 flex items-center gap-1">
+             🤖 AI Insight
+          </span>
+          <p className="text-violet-900 font-medium text-sm leading-relaxed">{insight}</p>
+        </div>
+        
+        <p className="text-xs text-text-muted mt-4 text-center">{confidenceNote}</p>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-6 pb-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link to="/" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-dim text-text-secondary transition-colors">
+          <Link to="/app" className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-dim text-text-secondary transition-colors">
             <ArrowLeft size={20} />
           </Link>
           <div>
@@ -227,6 +372,9 @@ const BatchDetail = () => {
               )}
             </div>
           </div>
+
+          {/* Demand Forecast Card */}
+          {renderDemandCard()}
         </div>
 
         {/* Right Column: Visual Assessment */}

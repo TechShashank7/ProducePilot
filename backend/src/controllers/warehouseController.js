@@ -14,6 +14,23 @@ export const getWarehouses = async (req, res) => {
   }
 };
 
+export const createWarehouse = async (req, res) => {
+  try {
+    const { name, city, state, latitude, longitude, capacityKg } = req.body;
+    const warehouse = await Warehouse.create({
+      name,
+      city,
+      state,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      capacityKg: capacityKg || 10000 // Default 10000kg
+    });
+    res.status(201).json(warehouse);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getWarehouseDestinations = async (req, res) => {
   try {
     const { id } = req.params;

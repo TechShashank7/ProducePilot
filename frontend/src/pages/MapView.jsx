@@ -28,10 +28,13 @@ const mapOptions = {
 
 const defaultCenter = { lat: 20.5937, lng: 78.9629 };
 
+const libraries = ['places'];
+
 const MapView = () => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries
   });
 
   const { userRole, assignedWarehouseId } = useAuth();
@@ -51,8 +54,8 @@ const MapView = () => {
   const mapRef = useRef(null);
 
   const fetchMapOverview = async () => {
+    setLoading(true);
     try {
-      setLoading(warehouses.length === 0);
       const data = await fetchApi('/map/overview');
       
       let displayWarehouses = data;

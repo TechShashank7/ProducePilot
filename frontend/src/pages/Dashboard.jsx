@@ -43,9 +43,9 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     if (!selectedWarehouseId) return;
     
-    setLoading(!summary);
     setError(null);
     try {
       const qs = `?warehouseId=${selectedWarehouseId}`;
